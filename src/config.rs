@@ -4,6 +4,9 @@
 //! top-level `default`. Everything a run needs — the argv to spawn, the standing
 //! context, whether to run in a neutral directory — lives in that table, so the
 //! binary carries no per-LLM knowledge of its own.
+//
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
 
 use std::collections::BTreeMap;
 use std::collections::btree_map::Entry;

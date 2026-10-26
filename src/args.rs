@@ -4,6 +4,9 @@
 //! that is not a flag, or at `--`, and everything from there on is question
 //! text whatever it looks like — which is what lets `aski what does --help do`
 //! ask rather than print usage.
+//
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
 
 use std::time::Duration;
 

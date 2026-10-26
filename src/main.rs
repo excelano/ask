@@ -4,6 +4,9 @@
 //! argument parsing is deliberately shallow: flags are read only while they
 //! lead, and every argument from the first non-flag onward is question text,
 //! whatever it looks like.
+//
+// Author: David M. Anderson
+// Built with AI assistance (Claude, Anthropic)
 
 mod args;
 mod config;

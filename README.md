@@ -7,7 +7,7 @@ $ aski how do I extract a tar.zst into ./out
 tar -xf archive.tar.zst -C ./out
 ```
 
-It is a generalization of a small `claude -p` wrapper. Every LLM is a table in a TOML config file, so adding one is a matter of writing down the argv that puts it in one-shot mode.
+Every LLM is a table in a TOML config file, so adding one is a matter of writing down the argv that puts it in one-shot mode.
 
 ## Install
 
