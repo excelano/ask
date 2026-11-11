@@ -8,8 +8,7 @@ license = "MIT"
 authors = ["David M. Anderson"]
 repository = "https://github.com/excelano/aski"
 readme = "README.md"
-keywords = ["llm", "cli", "claude", "prompt", "shell"]
-categories = ["command-line-utilities"]
+publish = false
 
 [dependencies]
 serde = { version = "1.0.229", features = ["derive"] }
@@ -38,6 +37,9 @@ assets = [
     ["README.md", "usr/share/doc/aski/README.md", "644"],
     ["LICENSE", "usr/share/doc/aski/copyright", "644"],
 ]
+
+[package.metadata.dist]
+dist = true
 
 # The profile that 'dist' will build with
 [profile.dist]

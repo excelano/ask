@@ -42,12 +42,6 @@ Then install it, so `brew upgrade` keeps it current:
 brew install aski
 ```
 
-### From crates.io
-
-```sh
-cargo install aski
-```
-
 ### Windows
 
 There is no Windows build. aski looks for its config through `XDG_CONFIG_HOME` and `HOME`, which are usually unset there, so a Windows binary would install and then fail to find a config file. Adding the target means adding a Windows config path in the same change.
