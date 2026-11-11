@@ -1,7 +1,7 @@
 [package]
 name = "ask"
 homepage = "https://github.com/excelano/ask"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 description = "one-shot questions for command-line LLMs — no quotes, no follow-up"
 license = "MIT"
