@@ -1,9 +1,9 @@
-# aski — one-shot questions for command-line LLMs
+# ask — one-shot questions for command-line LLMs
 
-You are in the middle of something at the shell and a question comes up. `aski` puts it to whichever LLM you have installed, prints the answer, and gets out of the way. There is no session, no follow-up, and no quoting: the question is just the rest of the command line.
+You are in the middle of something at the shell and a question comes up. `ask` puts it to whichever LLM you have installed, prints the answer, and gets out of the way. There is no session, no follow-up, and no quoting: the question is just the rest of the command line.
 
 ```sh
-$ aski how do I extract a tar.zst into ./out
+$ ask how do I extract a tar.zst into ./out
 tar -xf archive.tar.zst -C ./out
 ```
 
@@ -22,109 +22,94 @@ curl -fsSL https://excelano.com/apt/setup.sh | sudo sh
 Then install it, so `apt upgrade` keeps it current:
 
 ```sh
-sudo apt install aski
+sudo apt install ask
 ```
 
 Both amd64 and arm64 packages ship with every release.
 
-### Homebrew
-
-On macOS or Linux, tap and trust the repository once — Homebrew gates third-party taps behind explicit trust (one-time setup):
-
-```sh
-brew tap excelano/tap
-brew trust excelano/tap
-```
-
-Then install it, so `brew upgrade` keeps it current:
-
-```sh
-brew install aski
-```
-
 ### Windows
 
-There is no Windows build. aski looks for its config through `XDG_CONFIG_HOME` and `HOME`, which are usually unset there, so a Windows binary would install and then fail to find a config file. Adding the target means adding a Windows config path in the same change.
+There is no Windows build. `ask` looks for its config through `XDG_CONFIG_HOME` and `HOME`, which are usually unset there, so a Windows binary would install and then fail to find a config file. Adding the target means adding a Windows config path in the same change.
 
 ## First run
 
 Write the starter config, which comes with a Claude entry already filled in:
 
 ```sh
-aski --init
+ask --init
 ```
 
-That creates `~/.config/aski/config.toml` (or `$XDG_CONFIG_HOME/aski/config.toml`, or whatever `$ASKI_CONFIG` points at). It refuses to overwrite a config that already exists.
+That creates `~/.config/ask/config.toml` (or `$XDG_CONFIG_HOME/ask/config.toml`, or whatever `$ASK_CONFIG` points at). It refuses to overwrite a config that already exists.
 
 ## Using it
 
 The first argument selects an LLM. If it matches a table name or an alias, it is consumed as the selector and everything after it is the question. If it matches nothing, it is the first word of the question and the `default` LLM answers.
 
 ```sh
-aski how do I find files modified in the last day    # the default LLM
-aski gemini what does the --depth flag do            # a named LLM
-aski c explain this awk one-liner: NR % 2            # an alias
+ask how do I find files modified in the last day    # the default LLM
+ask gemini what does the --depth flag do            # a named LLM
+ask c explain this awk one-liner: NR % 2            # an alias
 ```
 
 Occasionally a question genuinely starts with an LLM's name. `--` forces the default and treats the rest as text:
 
 ```sh
-aski -- claude code keeps asking for permissions
+ask -- claude code keeps asking for permissions
 ```
 
 Context can also arrive on stdin, which is where a question about output you are staring at usually comes from:
 
 ```sh
-somecommand --help | aski what does the --depth flag do
-git log --oneline -20 | aski summarize what changed here
+somecommand --help | ask what does the --depth flag do
+git log --oneline -20 | ask summarize what changed here
 ```
 
-The piped text is appended below the typed question. When stdin is a pipe, `aski` drains it before starting the LLM, so an inherited stdin that never closes will hang a non-interactive run; `--no-stdin` is the way out of that.
+The piped text is appended below the typed question. When stdin is a pipe, `ask` drains it before starting the LLM, so an inherited stdin that never closes will hang a non-interactive run; `--no-stdin` is the way out of that.
 
-Options lead. Parsing stops at the first word that is not a flag, so a flag inside a question is still question text and `aski what does --help do` asks rather than printing usage. A question that genuinely starts with a dash needs `--` in front of it, the same escape that stops the first word from selecting an LLM.
+Options lead. Parsing stops at the first word that is not a flag, so a flag inside a question is still question text and `ask what does --help do` asks rather than printing usage. A question that genuinely starts with a dash needs `--` in front of it, the same escape that stops the first word from selecting an LLM.
 
 ```sh
-aski -- --depth is a flag of what
+ask -- --depth is a flag of what
 ```
 
 `--list` prints the configured LLMs and the command each one runs, and `-h`/`--help` and `-V`/`--version` do the obvious thing. Each of those answers the invocation by itself, so none can be combined with a question.
 
-Quoting is needed only for the shell's sake — a question containing `?`, `*`, `|`, `>`, `$`, or an apostrophe still has to be quoted, because `aski` never sees those characters otherwise.
+Quoting is needed only for the shell's sake — a question containing `?`, `*`, `|`, `>`, `$`, or an apostrophe still has to be quoted, because `ask` never sees those characters otherwise.
 
 ## In a script
 
-Everything that makes aski pleasant to type makes it ambiguous to call from a script. The first word may or may not select an LLM, a mistyped LLM name silently becomes part of the question instead of failing, and a question read out of a variable is text nobody inspected. These flags take the guessing out.
+Everything that makes `ask` pleasant to type makes it ambiguous to call from a script. The first word may or may not select an LLM, a mistyped LLM name silently becomes part of the question instead of failing, and a question read out of a variable is text nobody inspected. These flags take the guessing out.
 
 ```sh
-answer=$(aski --llm claude --timeout 60s -- "$question")
+answer=$(ask --llm claude --timeout 60s -- "$question")
 ```
 
-`-l`/`--llm` names the LLM outright. It fails when the name is not configured rather than folding it into the question the way a first word does, and it stops the first word from being read as a selector at all. `ASKI_LLM` does the same job from the environment, with one difference: it replaces the config's `default` rather than suppressing positional selection, so a script that wants no guessing anywhere should use the flag or `--`.
+`-l`/`--llm` names the LLM outright. It fails when the name is not configured rather than folding it into the question the way a first word does, and it stops the first word from being read as a selector at all. `ASK_LLM` does the same job from the environment, with one difference: it replaces the config's `default` rather than suppressing positional selection, so a script that wants no guessing anywhere should use the flag or `--`.
 
-`--timeout` bounds the wait. A bare number is seconds, and `90s`, `2m` and `1h` spell it out. The LLM is killed when the limit passes and aski exits 124. Only the LLM's own process is signalled, so one that spawns children of its own can leave them behind.
+`--timeout` bounds the wait. A bare number is seconds, and `90s`, `2m` and `1h` spell it out. The LLM is killed when the limit passes and `ask` exits 124. Only the LLM's own process is signalled, so one that spawns children of its own can leave them behind.
 
-`--no-stdin` refuses standard input, both as context for the question and as a handle for the LLM. aski otherwise reads stdin whenever it is not a terminal, which is right at a prompt and a hang waiting to happen in a script or a service whose inherited stdin never closes.
+`--no-stdin` refuses standard input, both as context for the question and as a handle for the LLM. `ask` otherwise reads stdin whenever it is not a terminal, which is right at a prompt and a hang waiting to happen in a script or a service whose inherited stdin never closes.
 
 `--context` replaces the LLM's standing context for one run and `--no-context` drops it, so a single configured LLM can answer in whatever voice a given script needs. An LLM whose command carries the context in a `{context}` placeholder cannot run without one, and says so rather than passing an empty argument along.
 
 `--here` runs the LLM in the current directory and `--neutral-dir` forces the empty temporary one, either way overriding that LLM's `neutral_dir` setting.
 
-`-n`/`--dry-run` prints the command aski would run, shell-quoted on one line, and stops. It reads stdin and builds the prompt first, so the line it prints is the one that would have been spawned.
+`-n`/`--dry-run` prints the command `ask` would run, shell-quoted on one line, and stops. It reads stdin and builds the prompt first, so the line it prints is the one that would have been spawned.
 
 ### Exit codes
 
-aski is a wrapper, so it borrows the convention `timeout(1)` and `env(1)` use: the LLM's own exit code passes through untouched, and aski's own troubles land in the high band above it.
+`ask` is a wrapper, so it borrows the convention `timeout(1)` and `env(1)` use: the LLM's own exit code passes through untouched, and `ask`'s own troubles land in the high band above it.
 
 | Code    | Meaning |
 |---------|---------|
 | 0-123   | the LLM's exit code, passed through |
 | 124     | the LLM was killed by `--timeout` |
-| 125     | aski itself failed: no config, an unknown option, an LLM name that is not configured |
+| 125     | `ask` itself failed: no config, an unknown option, an LLM name that is not configured |
 | 126     | the LLM's command was found but could not be run |
 | 127     | the LLM's command was not found |
 | 128+n   | the LLM was killed by signal n |
 
-An LLM that exits 124 through 127 of its own accord is indistinguishable from aski reporting one of those, which is the same ambiguity `timeout(1)` documents and lives with.
+An LLM that exits 124 through 127 of its own accord is indistinguishable from `ask` reporting one of those, which is the same ambiguity `timeout(1)` documents and lives with.
 
 ## Configuring an LLM
 

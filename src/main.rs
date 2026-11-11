@@ -1,4 +1,4 @@
-//! aski — a shortcut to each LLM's one-shot CLI mode.
+//! ask — a shortcut to each LLM's one-shot CLI mode.
 //!
 //! The point is that a question typed at the shell should not need quoting, so
 //! argument parsing is deliberately shallow: flags are read only while they
@@ -23,24 +23,24 @@ use config::{CONTEXT, Config, Llm};
 
 const STARTER: &str = include_str!("../starter.toml");
 
-/// The LLM's own code passes through, so aski's results sit in the band that
+/// The LLM's own code passes through, so `ask`'s results sit in the band that
 /// `timeout(1)` and `env(1)` reserve for a wrapper's own troubles.
 const TIMED_OUT: u8 = 124;
-const ASKI_FAILED: u8 = 125;
+const ASK_FAILED: u8 = 125;
 const NOT_RUNNABLE: u8 = 126;
 const NOT_FOUND: u8 = 127;
 
 const USAGE: &str = "\
-aski - one-shot questions for command-line LLMs (no follow-up)
+ask - one-shot questions for command-line LLMs (no follow-up)
 
 Usage:
-  aski <question>                ask the default LLM, no quotes needed
-  aski <llm> <question>          ask a configured LLM by name or alias
-  aski [options] -- <question>   ask without the first word selecting an LLM
-  command | aski <question>      pipe context in on stdin
+  ask <question>                ask the default LLM, no quotes needed
+  ask <llm> <question>          ask a configured LLM by name or alias
+  ask [options] -- <question>   ask without the first word selecting an LLM
+  command | ask <question>      pipe context in on stdin
 
 Options lead. Parsing stops at the first word that is not a flag, so a flag
-inside a question stays text and `aski what does --help do` asks.
+inside a question stays text and `ask what does --help do` asks.
 
   -h, --help                     show this help
   -V, --version                  show the version
@@ -58,13 +58,13 @@ inside a question stays text and `aski what does --help do` asks.
   -n, --dry-run                  print the command that would run, and stop
 
 Environment:
-  ASKI_LLM                       selector used in place of the config default
-  ASKI_CONFIG                    path to the config file
+  ASK_LLM                       selector used in place of the config default
+  ASK_CONFIG                    path to the config file
 
 Exit codes:
   0-123                          the LLM's own exit code, passed through
   124                            the LLM was killed by --timeout
-  125                            aski itself failed
+  125                            ask itself failed
   126                            the LLM was found but could not be run
   127                            the LLM's command was not found
   128+n                          the LLM was killed by signal n
@@ -76,8 +76,8 @@ fn main() -> ExitCode {
     match run() {
         Ok(code) => code,
         Err(message) => {
-            eprintln!("aski: {message}");
-            ExitCode::from(ASKI_FAILED)
+            eprintln!("ask: {message}");
+            ExitCode::from(ASK_FAILED)
         }
     }
 }
@@ -87,7 +87,7 @@ fn run() -> Result<ExitCode, String> {
 
     match args::parse(&argv)? {
         Mode::Help => Ok(say(&format!("{USAGE}\n"))),
-        Mode::Version => Ok(say(&format!("aski {}\n", env!("CARGO_PKG_VERSION")))),
+        Mode::Version => Ok(say(&format!("ask {}\n", env!("CARGO_PKG_VERSION")))),
         Mode::List => list(),
         Mode::Init => init(),
         Mode::Ask(ask) => ask_llm(ask),
@@ -103,7 +103,7 @@ fn ask_llm(ask: Ask) -> Result<ExitCode, String> {
     let from_env = env_llm();
     let named = match (ask.llm.as_deref(), from_env.as_deref()) {
         (Some(selector), _) => Some(("--llm", selector)),
-        (None, Some(selector)) => Some(("ASKI_LLM", selector)),
+        (None, Some(selector)) => Some(("ASK_LLM", selector)),
         (None, None) => None,
     };
     let fallback = match named {
@@ -150,7 +150,7 @@ fn ask_llm(ask: Ask) -> Result<ExitCode, String> {
 }
 
 fn env_llm() -> Option<String> {
-    std::env::var("ASKI_LLM")
+    std::env::var("ASK_LLM")
         .ok()
         .filter(|name| !name.is_empty())
 }
@@ -204,7 +204,7 @@ fn spawn(argv: &[String], llm: &Llm, ask: &Ask) -> Result<ExitCode, String> {
     // Held for the child's lifetime; dropping it removes the directory.
     let neutral_dir = if ask.neutral_dir.unwrap_or(llm.neutral_dir) {
         let dir = tempfile::Builder::new()
-            .prefix("aski-")
+            .prefix("ask-")
             .tempdir()
             .map_err(|e| format!("cannot create a neutral directory: {e}"))?;
         command.current_dir(dir.path());
@@ -216,11 +216,11 @@ fn spawn(argv: &[String], llm: &Llm, ask: &Ask) -> Result<ExitCode, String> {
     let mut child = match command.spawn() {
         Ok(child) => child,
         Err(e) => {
-            eprintln!("aski: cannot run {program}: {e}");
+            eprintln!("ask: cannot run {program}: {e}");
             return Ok(ExitCode::from(match e.kind() {
                 io::ErrorKind::NotFound => NOT_FOUND,
                 io::ErrorKind::PermissionDenied => NOT_RUNNABLE,
-                _ => ASKI_FAILED,
+                _ => ASK_FAILED,
             }));
         }
     };
@@ -232,7 +232,7 @@ fn spawn(argv: &[String], llm: &Llm, ask: &Ask) -> Result<ExitCode, String> {
     Ok(match status {
         Some(status) => exit_code(status),
         None => {
-            eprintln!("aski: {program} did not answer in time");
+            eprintln!("ask: {program} did not answer in time");
             ExitCode::from(TIMED_OUT)
         }
     })
@@ -271,11 +271,11 @@ fn exit_code(status: ExitStatus) -> ExitCode {
     if let Some(signal) = std::os::unix::process::ExitStatusExt::signal(&status) {
         return ExitCode::from(128u8.saturating_add(signal as u8));
     }
-    ExitCode::from(ASKI_FAILED)
+    ExitCode::from(ASK_FAILED)
 }
 
 /// Writes to stdout, treating a closed pipe as the end of the job rather than
-/// as a panic, so `aski --list | head` is not a crash.
+/// as a panic, so `ask --list | head` is not a crash.
 fn say(text: &str) -> ExitCode {
     use std::io::Write;
 
@@ -284,8 +284,8 @@ fn say(text: &str) -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) if e.kind() == io::ErrorKind::BrokenPipe => ExitCode::SUCCESS,
         Err(e) => {
-            eprintln!("aski: cannot write to stdout: {e}");
-            ExitCode::from(ASKI_FAILED)
+            eprintln!("ask: cannot write to stdout: {e}");
+            ExitCode::from(ASK_FAILED)
         }
     }
 }

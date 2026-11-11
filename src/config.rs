@@ -58,7 +58,7 @@ impl Config {
     pub fn load(path: &Path) -> Result<Config, String> {
         let text = fs::read_to_string(path).map_err(|e| {
             format!(
-                "cannot read {}: {e}\nrun `aski --init` to write a starter config",
+                "cannot read {}: {e}\nrun `ask --init` to write a starter config",
                 path.display()
             )
         })?;
@@ -163,10 +163,10 @@ impl Llm {
     }
 }
 
-/// `$ASKI_CONFIG`, else `$XDG_CONFIG_HOME/aski/config.toml`, else
-/// `~/.config/aski/config.toml`.
+/// `$ASK_CONFIG`, else `$XDG_CONFIG_HOME/ask/config.toml`, else
+/// `~/.config/ask/config.toml`.
 pub fn path() -> Result<PathBuf, String> {
-    if let Some(override_path) = env::var_os("ASKI_CONFIG")
+    if let Some(override_path) = env::var_os("ASK_CONFIG")
         && !override_path.is_empty()
     {
         return Ok(PathBuf::from(override_path));
@@ -179,8 +179,8 @@ pub fn path() -> Result<PathBuf, String> {
                 .filter(|dir| !dir.is_empty())
                 .map(|home| PathBuf::from(home).join(".config"))
         })
-        .ok_or("cannot locate a config directory: set HOME or ASKI_CONFIG")?;
-    Ok(base.join("aski").join("config.toml"))
+        .ok_or("cannot locate a config directory: set HOME or ASK_CONFIG")?;
+    Ok(base.join("ask").join("config.toml"))
 }
 
 #[cfg(test)]

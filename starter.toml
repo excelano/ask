@@ -1,14 +1,14 @@
-# aski — one-shot questions for command-line LLMs.
+# ask — one-shot questions for command-line LLMs.
 #
-#   aski how do I find files modified in the last day
-#   aski gemini what does the --depth flag do
+#   ask how do I find files modified in the last day
+#   ask gemini what does the --depth flag do
 #
 # The first argument selects an LLM. If it matches no [llm.*] table name and no
 # alias, it is treated as the start of the question and `default` is used.
 #
-# A script should not rely on that guess: `aski --llm <name>` fails on a name
+# A script should not rely on that guess: `ask --llm <name>` fails on a name
 # this file does not configure, rather than folding it into the question. See
-# `aski --help` for that and the rest of the per-run flags.
+# `ask --help` for that and the rest of the per-run flags.
 #
 # Each `command` is spawned directly — no shell — so each element is one argv
 # entry and needs no quoting beyond TOML's own. Two placeholders are substituted

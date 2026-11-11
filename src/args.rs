@@ -2,7 +2,7 @@
 //!
 //! Flags are read only while they lead. Parsing stops at the first argument
 //! that is not a flag, or at `--`, and everything from there on is question
-//! text whatever it looks like — which is what lets `aski what does --help do`
+//! text whatever it looks like — which is what lets `ask what does --help do`
 //! ask rather than print usage.
 //
 // Author: David M. Anderson
